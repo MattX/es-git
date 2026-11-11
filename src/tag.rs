@@ -1,5 +1,6 @@
 use crate::object::{GitObject, ObjectInner, ObjectType};
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use crate::signature::{Signature, SignaturePayload};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
@@ -26,7 +27,7 @@ pub fn is_valid_tag_name(tag_name: String) -> bool {
 ///
 /// [1]: https://git-scm.com/book/en/Git-Basics-Tagging
 pub struct Tag {
-  pub(crate) inner: SharedReference<Repository, git2::Tag<'static>>,
+  pub(crate) inner: Shared<Repository, git2::Tag<'static>>,
 }
 
 #[napi]
@@ -234,7 +235,7 @@ impl Repository {
   /// @param {string} oid - Prefix hash.
   /// @throws Throws error if tag does not exist.
   pub fn get_tag(&self, this: Reference<Repository>, env: Env, oid: String) -> crate::Result<Tag> {
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .find_tag_by_prefix(&oid)

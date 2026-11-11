@@ -1,4 +1,5 @@
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use crate::tree::{Tree, TreeInner};
 use napi::Env;
 use napi_derive::napi;
@@ -34,7 +35,7 @@ impl From<git2::ReferenceType> for ReferenceType {
 ///
 /// [1]: https://git-scm.com/book/en/Git-Internals-Git-References
 pub struct Reference {
-  pub(crate) inner: napi::bindgen_prelude::SharedReference<Repository, git2::Reference<'static>>,
+  pub(crate) inner: Shared<Repository, git2::Reference<'static>>,
 }
 
 #[napi]
@@ -364,7 +365,7 @@ impl Reference {
   /// @returns Peeled `Tree` of this reference.
   pub fn peel_to_tree(&self, this: napi::bindgen_prelude::Reference<Reference>, env: Env) -> crate::Result<Tree> {
     Ok(Tree {
-      inner: TreeInner::Reference(this.share_with(env, |reference| {
+      inner: TreeInner::Reference(this.share(env, |reference| {
         reference
           .inner
           .peel_to_tree()
@@ -414,7 +415,7 @@ impl Reference {
   ///
   /// @returns Resolved reference.
   pub fn resolve(&self, env: Env) -> crate::Result<Reference> {
-    let inner = self.inner.clone(env)?.share_with(env, |reference| {
+    let inner = self.inner.clone(env)?.share(env, |reference| {
       reference.resolve().map_err(crate::Error::from).map_err(|e| e.into())
     })?;
     Ok(Self { inner })
@@ -442,7 +443,7 @@ impl Reference {
     new_name: String,
     options: Option<RenameReferenceOptions>,
   ) -> crate::Result<Reference> {
-    let inner = self.inner.clone(env)?.share_with(env, |reference| {
+    let inner = self.inner.clone(env)?.share(env, |reference| {
       let (force, msg) = options.map(|x| (x.force, x.log_message)).unwrap_or((None, None));
       reference
         .rename(
@@ -523,7 +524,7 @@ impl Repository {
     env: Env,
     name: String,
   ) -> crate::Result<Reference> {
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .find_reference(&name)

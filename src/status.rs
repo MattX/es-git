@@ -1,5 +1,6 @@
 use crate::diff::DiffDelta;
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::ops::Deref;
@@ -185,7 +186,7 @@ impl From<StatusOptions> for git2::StatusOptions {
 /// Each instance appears as if it were a collection, having a length and
 /// allowing indexing, as well as providing an iterator.
 pub struct Statuses {
-  pub(crate) inner: SharedReference<Repository, git2::Statuses<'static>>,
+  pub(crate) inner: Shared<Repository, git2::Statuses<'static>>,
 }
 
 #[napi]
@@ -206,7 +207,7 @@ impl Statuses {
   /// entry does not exist.
   pub fn get(&self, index: u32, this: Reference<Statuses>, env: Env) -> Option<StatusEntry> {
     this
-      .share_with(env, move |repo| {
+      .share(env, move |repo| {
         repo
           .inner
           .get(index as usize)
@@ -252,14 +253,14 @@ impl Statuses {
   #[napi]
   /// Returns an iterator over the statuses in this list.
   pub fn iter(&self, this: Reference<Statuses>, env: Env) -> crate::Result<StatusesIter> {
-    let inner = this.share_with(env, move |statuses| Ok(statuses.inner.iter()))?;
+    let inner = this.share(env, move |statuses| Ok(statuses.inner.iter()))?;
     Ok(StatusesIter { inner })
   }
 }
 
 #[napi(iterator)]
 pub struct StatusesIter {
-  pub(crate) inner: SharedReference<Statuses, git2::StatusIter<'static>>,
+  pub(crate) inner: Shared<Statuses, git2::StatusIter<'static>>,
 }
 
 #[napi]
@@ -276,7 +277,7 @@ impl Generator for StatusesIter {
 }
 
 pub(crate) enum StatusEntryInner {
-  Statuses(SharedReference<Statuses, git2::StatusEntry<'static>>),
+  Statuses(Shared<Statuses, git2::StatusEntry<'static>>),
   Owned(git2::StatusEntry<'static>),
 }
 
@@ -477,7 +478,7 @@ impl Repository {
   ///
   /// @returns A container for a list of status information about a repository.
   pub fn statuses(&self, this: Reference<Repository>, env: Env) -> crate::Result<Statuses> {
-    let inner = this.share_with(env, move |repo| {
+    let inner = this.share(env, move |repo| {
       repo
         .inner
         .statuses(None)

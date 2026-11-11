@@ -1,4 +1,5 @@
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use crate::util::path_to_string;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
@@ -80,7 +81,7 @@ impl TryFrom<&git2::ConfigEntry<'_>> for ConfigEntry {
 #[napi(iterator)]
 /// An iterator over the `ConfigEntry` values of a config.
 pub struct ConfigEntries {
-  pub(crate) inner: SharedReference<Config, git2::ConfigEntries<'static>>,
+  pub(crate) inner: Shared<Config, git2::ConfigEntries<'static>>,
 }
 
 #[napi]
@@ -446,7 +447,7 @@ impl Config {
   /// }
   /// ```
   pub fn entries(&self, env: Env, this: Reference<Config>, glob: Option<String>) -> crate::Result<ConfigEntries> {
-    let inner = this.share_with(env, |config| {
+    let inner = this.share(env, |config| {
       config
         .inner
         .entries(glob.as_deref())
@@ -482,7 +483,7 @@ impl Config {
     name: String,
     regexp: Option<String>,
   ) -> crate::Result<ConfigEntries> {
-    let inner = this.share_with(env, |config| {
+    let inner = this.share(env, |config| {
       config
         .inner
         .multivar(&name, regexp.as_deref())

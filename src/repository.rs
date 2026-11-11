@@ -1,6 +1,7 @@
 use crate::annotated_commit::AnnotatedCommit;
 use crate::commit::Commit;
 use crate::remote::FetchOptions;
+use crate::shared::ShareExt;
 use crate::util;
 use crate::worktree::Worktree;
 use napi::bindgen_prelude::*;
@@ -371,7 +372,7 @@ impl Repository {
   /// @returns Reference pointed at by `HEAD`.
   pub fn head(&self, this: Reference<Repository>, env: Env) -> crate::Result<crate::reference::Reference> {
     Ok(crate::reference::Reference {
-      inner: this.share_with(env, |repo| {
+      inner: this.share(env, |repo| {
         repo.inner.head().map_err(crate::Error::from).map_err(|e| e.into())
       })?,
     })

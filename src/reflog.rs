@@ -5,11 +5,12 @@ use napi::bindgen_prelude::*;
 use napi::{Env, Error};
 use napi_derive::napi;
 
+use crate::shared::{ShareExt, Shared};
 use crate::{repository::Repository, signature::Signature};
 
 /// Internal implementation of ReflogEntry holding the original git2 value
 pub(crate) enum ReflogEntryInner {
-  Reflog(SharedReference<Reflog, git2::ReflogEntry<'static>>),
+  Reflog(Shared<Reflog, git2::ReflogEntry<'static>>),
   Owned(git2::ReflogEntry<'static>),
 }
 
@@ -111,7 +112,7 @@ impl ReflogEntry {
 #[napi(iterator)]
 /// An iterator over the entries in a reflog.
 pub struct ReflogIter {
-  pub(crate) inner: SharedReference<Reflog, git2::ReflogIter<'static>>,
+  pub(crate) inner: Shared<Reflog, git2::ReflogIter<'static>>,
 }
 
 #[napi]
@@ -221,7 +222,7 @@ impl Reflog {
     }
 
     this
-      .share_with(env, |reflog| {
+      .share(env, |reflog| {
         reflog
           .inner
           .get(i as usize)
@@ -282,7 +283,7 @@ impl Reflog {
   /// @returns Iterator over the reflog entries.
   /// @throws Throws error if the reflog cannot be accessed.
   pub fn iter(&self, this: Reference<Reflog>, env: Env) -> crate::Result<ReflogIter> {
-    let inner = this.share_with(env, |reflog| Ok(reflog.inner.iter()))?;
+    let inner = this.share(env, |reflog| Ok(reflog.inner.iter()))?;
     Ok(ReflogIter { inner })
   }
 

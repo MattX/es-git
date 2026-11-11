@@ -29,6 +29,7 @@ pub mod repository;
 pub mod revert;
 pub mod revparse;
 pub mod revwalk;
+pub(crate) mod shared;
 pub mod signature;
 pub mod stash;
 pub mod status;

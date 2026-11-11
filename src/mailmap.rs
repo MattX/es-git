@@ -1,12 +1,13 @@
 use crate::commit::Commit;
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use crate::signature::{Signature, SignaturePayload};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::ops::{Deref, DerefMut};
 
 pub(crate) enum MailmapInner {
-  Repo(SharedReference<Repository, git2::Mailmap>),
+  Repo(Shared<Repository, git2::Mailmap>),
   Owned(git2::Mailmap),
 }
 
@@ -172,7 +173,7 @@ impl Repository {
   #[napi]
   pub fn mailmap(&self, this: Reference<Repository>, env: Env) -> Option<Mailmap> {
     let inner = this
-      .share_with(env, |repo| {
+      .share(env, |repo| {
         repo.inner.mailmap().map_err(|e| crate::Error::from(e).into())
       })
       .ok()?;

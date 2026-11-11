@@ -1,12 +1,13 @@
 use crate::object::GitObject;
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::ops::Deref;
 
 pub(crate) enum DescribeInner {
-  Repo(SharedReference<Repository, git2::Describe<'static>>),
-  Object(SharedReference<GitObject, git2::Describe<'static>>),
+  Repo(Shared<Repository, git2::Describe<'static>>),
+  Object(Shared<GitObject, git2::Describe<'static>>),
 }
 
 impl Deref for DescribeInner {
@@ -152,7 +153,7 @@ impl Repository {
     options: Option<DescribeOptions>,
   ) -> crate::Result<Describe> {
     let opts = options.map_or_else(git2::DescribeOptions::new, git2::DescribeOptions::from);
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .describe(&opts)
@@ -189,7 +190,7 @@ impl GitObject {
     options: Option<DescribeOptions>,
   ) -> crate::Result<Describe> {
     let opts = options.map_or_else(git2::DescribeOptions::new, git2::DescribeOptions::from);
-    let inner = this.share_with(env, |obj| {
+    let inner = this.share(env, |obj| {
       obj
         .inner
         .describe(&opts)

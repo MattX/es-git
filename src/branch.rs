@@ -1,5 +1,6 @@
 use crate::commit::Commit;
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::ops::{Deref, DerefMut};
@@ -20,7 +21,7 @@ pub fn is_valid_branch_name(name: String) -> crate::Result<bool> {
 }
 
 pub(crate) enum BranchInner {
-  Repo(SharedReference<Repository, git2::Branch<'static>>),
+  Repo(Shared<Repository, git2::Branch<'static>>),
   Owned(git2::Branch<'static>),
 }
 
@@ -58,7 +59,7 @@ pub struct Branch {
 #[napi(iterator)]
 /// An iterator over the branches inside of a repository.
 pub struct Branches {
-  pub(crate) inner: SharedReference<Repository, git2::Branches<'static>>,
+  pub(crate) inner: Shared<Repository, git2::Branches<'static>>,
 }
 
 #[napi(object)]
@@ -330,7 +331,7 @@ impl Repository {
     this: Reference<Repository>,
   ) -> crate::Result<Branch> {
     let force = options.and_then(|x| x.force).unwrap_or_default();
-    let inner = this.share_with(env, move |repo| {
+    let inner = this.share(env, move |repo| {
       repo
         .inner
         .branch(&branch_name, &target.inner, force)
@@ -388,7 +389,7 @@ impl Repository {
     env: Env,
     this: Reference<Repository>,
   ) -> crate::Result<Branch> {
-    let inner = this.share_with(env, move |repo| {
+    let inner = this.share(env, move |repo| {
       repo
         .inner
         .find_branch(&name, branch_type.into())
@@ -430,7 +431,7 @@ impl Repository {
     env: Env,
     this: Reference<Repository>,
   ) -> crate::Result<Branches> {
-    let inner = this.share_with(env, move |repo| {
+    let inner = this.share(env, move |repo| {
       repo
         .inner
         .branches(filter.and_then(|x| x.kind.map(|x| x.into())))

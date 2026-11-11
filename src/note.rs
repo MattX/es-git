@@ -1,4 +1,5 @@
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use crate::signature::{Signature, SignaturePayload};
 use git2::Oid;
 use napi::bindgen_prelude::*;
@@ -9,7 +10,7 @@ use napi_derive::napi;
 ///
 /// [1]: http://alblue.bandlem.com/2011/11/git-tip-of-week-git-notes.html
 pub struct Note {
-  pub(crate) inner: SharedReference<Repository, git2::Note<'static>>,
+  pub(crate) inner: Shared<Repository, git2::Note<'static>>,
 }
 
 #[napi]
@@ -132,7 +133,7 @@ pub struct DeleteNoteOptions {
 #[napi(iterator)]
 /// An iterator over all of the notes within a repository.
 pub struct Notes {
-  pub(crate) inner: SharedReference<Repository, git2::Notes<'static>>,
+  pub(crate) inner: Shared<Repository, git2::Notes<'static>>,
 }
 
 #[napi(object)]
@@ -247,7 +248,7 @@ impl Repository {
   /// }
   /// ```
   pub fn notes(&self, this: Reference<Repository>, env: Env, notes_ref: Option<String>) -> crate::Result<Notes> {
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .notes(notes_ref.as_deref())
@@ -287,7 +288,7 @@ impl Repository {
     let opts = options.unwrap_or_default();
     let oid = Oid::from_str(&id)?;
     let notes_ref = opts.notes_ref;
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .find_note(notes_ref.as_deref(), oid)

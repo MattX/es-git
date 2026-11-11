@@ -1,6 +1,7 @@
 use crate::blob::{Blob, BlobInner};
 use crate::commit::{Commit, CommitInner};
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::ops::Deref;
@@ -44,7 +45,7 @@ impl From<ObjectType> for git2::ObjectType {
 }
 
 pub(crate) enum ObjectInner {
-  Repo(SharedReference<Repository, git2::Object<'static>>),
+  Repo(Shared<Repository, git2::Object<'static>>),
   Owned(git2::Object<'static>),
 }
 
@@ -158,7 +159,7 @@ impl GitObject {
   ///
   /// @returns Git blob.
   pub fn peel_to_blob(&self, env: Env, this: Reference<GitObject>) -> crate::Result<Blob> {
-    let blob = this.share_with(env, |obj| {
+    let blob = this.share(env, |obj| {
       obj
         .inner
         .peel_to_blob()
@@ -223,7 +224,7 @@ impl Repository {
   /// @returns Git object.
   /// @throws Throws error if the object does not exist.
   pub fn get_object(&self, this: Reference<Repository>, env: Env, oid: String) -> crate::Result<GitObject> {
-    let object = this.share_with(env, |repo| {
+    let object = this.share(env, |repo| {
       repo
         .inner
         .find_object_by_prefix(&oid, None)

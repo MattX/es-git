@@ -3,6 +3,7 @@ use crate::checkout::CheckoutOptions;
 use crate::index::Index;
 use crate::merge::MergeOptions;
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use crate::signature::{Signature, SignaturePayload};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
@@ -24,7 +25,7 @@ pub struct RebaseCommitOptions {
 /// Begin the rebase by iterating the returned `Rebase`
 /// (e.g., `for (const op of rebase) { ... }` or calling `next()`).
 pub struct Rebase {
-  pub(crate) inner: SharedReference<Repository, git2::Rebase<'static>>,
+  pub(crate) inner: Shared<Repository, git2::Rebase<'static>>,
 }
 
 #[napi]
@@ -382,7 +383,7 @@ impl Repository {
     env: Env,
     this: Reference<Repository>,
   ) -> crate::Result<Rebase> {
-    let inner = this.share_with(env, move |repo| {
+    let inner = this.share(env, move |repo| {
       repo
         .inner
         .rebase(
@@ -419,7 +420,7 @@ impl Repository {
     env: Env,
     this: Reference<Repository>,
   ) -> crate::Result<Rebase> {
-    let inner = this.share_with(env, move |repo| {
+    let inner = this.share(env, move |repo| {
       repo
         .inner
         .open_rebase(options.map(git2::RebaseOptions::from).as_mut())

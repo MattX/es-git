@@ -1,5 +1,6 @@
 use crate::object::{GitObject, ObjectInner};
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use crate::signature::{Signature, SignaturePayload};
 use crate::tree::{Tree, TreeInner};
 use chrono::{DateTime, Utc};
@@ -72,7 +73,7 @@ pub struct AmendOptions {
 }
 
 pub(crate) enum CommitInner {
-  Repo(SharedReference<Repository, git2::Commit<'static>>),
+  Repo(Shared<Repository, git2::Commit<'static>>),
   Owned(git2::Commit<'static>),
 }
 
@@ -278,7 +279,7 @@ impl Commit {
   ///
   /// @returns Tree pointed to by a commit.
   pub fn tree(&self, this: Reference<Commit>, env: Env) -> crate::Result<Tree> {
-    let tree = this.share_with(env, |commit| {
+    let tree = this.share(env, |commit| {
       commit.inner.tree().map_err(crate::Error::from).map_err(|e| e.into())
     })?;
     Ok(Tree {
@@ -388,7 +389,7 @@ impl Repository {
   /// @returns Commit instance found by oid.
   /// @throws Throws error if the commit does not exist.
   pub fn get_commit(&self, this: Reference<Repository>, env: Env, oid: String) -> crate::Result<Commit> {
-    let commit = this.share_with(env, |repo| {
+    let commit = this.share(env, |repo| {
       repo
         .inner
         .find_commit_by_prefix(&oid)

@@ -1,4 +1,5 @@
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
@@ -15,7 +16,7 @@ pub enum RevwalkSort {
 /// A revwalk allows traversal of the commit graph defined by including one or
 /// more leaves and excluding one or more roots.
 pub struct Revwalk {
-  pub(crate) inner: SharedReference<Repository, git2::Revwalk<'static>>,
+  pub(crate) inner: Shared<Repository, git2::Revwalk<'static>>,
 }
 
 #[napi]
@@ -330,7 +331,7 @@ impl Repository {
   ///
   /// @returns Revwalk to traverse the commit graph in this repository.
   pub fn revwalk(&self, this: Reference<Repository>, env: Env) -> crate::Result<Revwalk> {
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo.inner.revwalk().map_err(crate::Error::from).map_err(|e| e.into())
     })?;
     Ok(Revwalk { inner })

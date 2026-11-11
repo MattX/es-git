@@ -1,6 +1,7 @@
 use crate::commit::Commit;
 use crate::object::{GitObject, ObjectInner, ObjectType};
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::ops::Deref;
@@ -24,9 +25,9 @@ impl From<TreeWalkMode> for git2::TreeWalkMode {
 }
 
 pub(crate) enum TreeInner {
-  Repo(SharedReference<Repository, git2::Tree<'static>>),
-  Reference(SharedReference<crate::reference::Reference, git2::Tree<'static>>),
-  Commit(SharedReference<Commit, git2::Tree<'static>>),
+  Repo(Shared<Repository, git2::Tree<'static>>),
+  Reference(Shared<crate::reference::Reference, git2::Tree<'static>>),
+  Commit(Shared<Commit, git2::Tree<'static>>),
 }
 
 impl Deref for TreeInner {
@@ -110,7 +111,7 @@ impl Tree {
   ///
   /// @returns An iterator over the entries in this tree.
   pub fn iter(&self, this: Reference<Tree>, env: Env) -> crate::Result<TreeIter> {
-    let inner = this.share_with(env, |tree| Ok(tree.inner.iter()))?;
+    let inner = this.share(env, |tree| Ok(tree.inner.iter()))?;
     Ok(TreeIter { inner })
   }
 
@@ -166,7 +167,7 @@ impl Tree {
   pub fn get_id(&self, this: Reference<Tree>, env: Env, id: String) -> crate::Result<Option<TreeEntry>> {
     let oid = git2::Oid::from_str(&id)?;
     let entry = this
-      .share_with(env, |tree| {
+      .share(env, |tree| {
         tree
           .inner
           .get_id(oid)
@@ -195,7 +196,7 @@ impl Tree {
   /// @returns Tree entry.
   pub fn get(&self, this: Reference<Tree>, env: Env, index: u32) -> crate::Result<Option<TreeEntry>> {
     let entry = this
-      .share_with(env, |tree| {
+      .share(env, |tree| {
         tree
           .inner
           .get(index as usize)
@@ -224,7 +225,7 @@ impl Tree {
   /// @returns Tree entry.
   pub fn get_name(&self, this: Reference<Tree>, env: Env, filename: String) -> crate::Result<Option<TreeEntry>> {
     let entry = this
-      .share_with(env, |tree| {
+      .share(env, |tree| {
         tree
           .inner
           .get_name(&filename)
@@ -254,7 +255,7 @@ impl Tree {
   /// @returns Tree entry.
   pub fn get_path(&self, this: Reference<Tree>, env: Env, path: String) -> crate::Result<Option<TreeEntry>> {
     let entry = this
-      .share_with(env, |tree| {
+      .share(env, |tree| {
         tree
           .inner
           .get_path(Path::new(&path))
@@ -290,7 +291,7 @@ impl Tree {
 #[napi(iterator)]
 /// An iterator over the entries in a tree.
 pub struct TreeIter {
-  pub(crate) inner: SharedReference<Tree, git2::TreeIter<'static>>,
+  pub(crate) inner: Shared<Tree, git2::TreeIter<'static>>,
 }
 
 #[napi]
@@ -307,7 +308,7 @@ impl Generator for TreeIter {
 }
 
 pub(crate) enum TreeEntryInner {
-  Tree(SharedReference<Tree, git2::TreeEntry<'static>>),
+  Tree(Shared<Tree, git2::TreeEntry<'static>>),
   Owned(git2::TreeEntry<'static>),
 }
 
@@ -411,7 +412,7 @@ impl TreeEntry {
   /// @param {Repository} repo - Repository which this tree entry belongs to.
   /// @returns Git object that pointed by the entry.
   pub fn to_object(&self, env: Env, repo: Reference<Repository>) -> crate::Result<GitObject> {
-    let object = repo.share_with(env, |repo| {
+    let object = repo.share(env, |repo| {
       self
         .inner
         .to_object(&repo.inner)
@@ -442,7 +443,7 @@ impl Repository {
   /// @throws Throws error if tree does not exist.
   pub fn get_tree(&self, this: Reference<Repository>, env: Env, oid: String) -> crate::Result<Tree> {
     let oid = git2::Oid::from_str(&oid)?;
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .find_tree(oid)

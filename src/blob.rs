@@ -1,10 +1,11 @@
 use crate::object::GitObject;
+use crate::shared::Shared;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::ops::Deref;
 
 pub(crate) enum BlobInner {
-  GitObject(SharedReference<GitObject, git2::Blob<'static>>),
+  GitObject(Shared<GitObject, git2::Blob<'static>>),
 }
 
 impl Deref for BlobInner {

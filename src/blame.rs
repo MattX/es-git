@@ -1,4 +1,5 @@
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use crate::signature::Signature;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
@@ -74,7 +75,7 @@ pub struct Blame {
 
 /// Inner implementation of Blame that handles shared references
 pub(crate) enum BlameInner {
-  Repo(SharedReference<Repository, git2::Blame<'static>>),
+  Repo(Shared<Repository, git2::Blame<'static>>),
 }
 
 /// An iterator over blame hunks.
@@ -429,7 +430,7 @@ impl Blame {
       BlameInner::Repo(shared_ref) => {
         let cloned = shared_ref.clone(env)?;
 
-        cloned.share_with(env, |git_blame| {
+        cloned.share(env, |git_blame| {
           git_blame
             .blame_buffer(buffer.as_ref())
             .map_err(|e| crate::Error::from(e).into())
@@ -481,7 +482,7 @@ impl Repository {
   ) -> crate::Result<Blame> {
     let file_path = Path::new(&path);
 
-    let blame = this.share_with(env, |repo| {
+    let blame = this.share(env, |repo| {
       let result = match &options {
         Some(options) => {
           let mut git_options = git2::BlameOptions::from(options);

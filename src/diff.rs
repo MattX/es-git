@@ -1,5 +1,6 @@
 use crate::index::Index;
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use crate::tree::Tree;
 use crate::util::{bitflags_contain, path_to_string};
 use napi::bindgen_prelude::*;
@@ -282,7 +283,7 @@ impl From<DiffFindOptions> for git2::DiffFindOptions {
 /// generator functions on the `Repository` class (e.g. `diffTreeToTree`
 /// or other `diff*` functions).
 pub struct Diff {
-  pub(crate) inner: SharedReference<Repository, git2::Diff<'static>>,
+  pub(crate) inner: Shared<Repository, git2::Diff<'static>>,
 }
 
 #[napi]
@@ -325,7 +326,7 @@ impl Diff {
   /// @returns An iterator over the deltas in this diff.
   pub fn deltas(&self, env: Env, this: Reference<Diff>) -> crate::Result<Deltas> {
     Ok(Deltas {
-      inner: this.share_with(env, |diff| Ok(diff.inner.deltas()))?,
+      inner: this.share(env, |diff| Ok(diff.inner.deltas()))?,
     })
   }
 
@@ -473,7 +474,7 @@ impl DiffStats {
 #[napi(iterator)]
 /// An iterator over the diffs in a delta.
 pub struct Deltas {
-  pub(crate) inner: SharedReference<Diff, git2::Deltas<'static>>,
+  pub(crate) inner: Shared<Diff, git2::Deltas<'static>>,
 }
 
 #[napi]
@@ -1035,7 +1036,7 @@ impl Repository {
     options: Option<DiffOptions>,
   ) -> crate::Result<Diff> {
     let mut opts: git2::DiffOptions = options.map(|x| x.into()).unwrap_or_default();
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .diff_tree_to_tree(
@@ -1078,7 +1079,7 @@ impl Repository {
     options: Option<DiffOptions>,
   ) -> crate::Result<Diff> {
     let mut opts: git2::DiffOptions = options.map(|x| x.into()).unwrap_or_default();
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .diff_index_to_index(&old_index.inner, &new_index.inner, Some(&mut opts))
@@ -1121,7 +1122,7 @@ impl Repository {
     options: Option<DiffOptions>,
   ) -> crate::Result<Diff> {
     let mut opts: git2::DiffOptions = options.map(|x| x.into()).unwrap_or_default();
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .diff_index_to_workdir(index.map(|x| &x.inner), Some(&mut opts))
@@ -1171,7 +1172,7 @@ impl Repository {
     options: Option<DiffOptions>,
   ) -> crate::Result<Diff> {
     let mut opts: git2::DiffOptions = options.map(|x| x.into()).unwrap_or_default();
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .diff_tree_to_workdir(old_tree.map(|x| x.inner.deref()), Some(&mut opts))
@@ -1212,7 +1213,7 @@ impl Repository {
     options: Option<DiffOptions>,
   ) -> crate::Result<Diff> {
     let mut opts: git2::DiffOptions = options.map(|x| x.into()).unwrap_or_default();
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .diff_tree_to_workdir_with_index(old_tree.map(|x| x.inner.deref()), Some(&mut opts))

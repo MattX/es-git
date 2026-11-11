@@ -1,5 +1,6 @@
 use crate::commit::Commit;
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::ops::Deref;
@@ -12,7 +13,7 @@ use std::ops::Deref;
 /// operation.
 pub struct AnnotatedCommit {
   pub(crate) from_ref: bool,
-  pub(crate) inner: SharedReference<Repository, git2::AnnotatedCommit<'static>>,
+  pub(crate) inner: Shared<Repository, git2::AnnotatedCommit<'static>>,
 }
 
 impl Deref for AnnotatedCommit {
@@ -88,7 +89,7 @@ impl Repository {
     env: Env,
   ) -> crate::Result<AnnotatedCommit> {
     let oid = commit.inner.id();
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .find_annotated_commit(oid)
@@ -118,7 +119,7 @@ impl Repository {
     this: Reference<Repository>,
     env: Env,
   ) -> crate::Result<AnnotatedCommit> {
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .reference_to_annotated_commit(&reference.inner)
@@ -156,7 +157,7 @@ impl Repository {
     env: Env,
   ) -> crate::Result<AnnotatedCommit> {
     let oid = git2::Oid::from_str(&id)?;
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .annotated_commit_from_fetchhead(&branch_name, &remote_url, &oid)

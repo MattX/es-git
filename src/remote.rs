@@ -1,5 +1,6 @@
 use crate::js::{JsCallback, JsCallbackExt};
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::path::Path;
@@ -661,7 +662,7 @@ impl Task for GetRemoteDefaultBranchTask {
 ///
 /// [1]: https://git-scm.com/book/en/Git-Basics-Working-with-Remotes
 pub struct Remote {
-  pub(crate) inner: SharedReference<Repository, git2::Remote<'static>>,
+  pub(crate) inner: Shared<Repository, git2::Remote<'static>>,
 }
 
 #[napi]
@@ -987,7 +988,7 @@ impl Repository {
   /// @throws Throws error if remote does not exist.
   pub fn get_remote(&self, this: Reference<Repository>, env: Env, name: String) -> crate::Result<Remote> {
     let remote = Remote {
-      inner: this.share_with(env, move |repo| {
+      inner: this.share(env, move |repo| {
         repo
           .inner
           .find_remote(&name)
@@ -1038,7 +1039,7 @@ impl Repository {
     options: Option<CreateRemoteOptions>,
   ) -> crate::Result<Remote> {
     let remote = Remote {
-      inner: this.share_with(env, move |repo| {
+      inner: this.share(env, move |repo| {
         if let Some(CreateRemoteOptions {
           fetch_refspec: Some(refspec),
         }) = options

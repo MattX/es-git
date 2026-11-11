@@ -1,4 +1,5 @@
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use crate::util;
 use chrono::{DateTime, Utc};
 use napi::bindgen_prelude::*;
@@ -603,7 +604,7 @@ impl Index {
   ///
   /// @returns An iterator over the entries in this index.
   pub fn entries(&self, this: Reference<Index>, env: Env) -> crate::Result<IndexEntries> {
-    let inner = this.share_with(env, |index| Ok(index.inner.iter()))?;
+    let inner = this.share(env, |index| Ok(index.inner.iter()))?;
     Ok(IndexEntries { inner })
   }
 }
@@ -611,7 +612,7 @@ impl Index {
 #[napi(iterator)]
 /// An iterator over the entries in an index.
 pub struct IndexEntries {
-  pub(crate) inner: SharedReference<Index, git2::IndexEntries<'static>>,
+  pub(crate) inner: Shared<Index, git2::IndexEntries<'static>>,
 }
 
 #[napi]

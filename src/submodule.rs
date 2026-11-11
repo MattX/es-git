@@ -1,6 +1,7 @@
 use crate::checkout::CheckoutOptions;
 use crate::remote::FetchOptions;
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use crate::util;
 use crate::util::bitflags_contain;
 use napi::bindgen_prelude::*;
@@ -180,11 +181,11 @@ pub fn submodule_status_contains(source: u32, target: u32) -> bool {
 
 #[napi]
 pub struct Submodule {
-  pub(crate) inner: SharedReference<Repository, git2::Submodule<'static>>,
+  pub(crate) inner: Shared<Repository, git2::Submodule<'static>>,
 }
 
 pub struct SubmoduleInitTask {
-  inner: SharedReference<Repository, git2::Submodule<'static>>,
+  inner: Shared<Repository, git2::Submodule<'static>>,
   overwrite: bool,
 }
 
@@ -206,7 +207,7 @@ impl Task for SubmoduleInitTask {
 }
 
 pub struct SubmoduleRepoInitTask {
-  inner: SharedReference<Repository, git2::Submodule<'static>>,
+  inner: Shared<Repository, git2::Submodule<'static>>,
   use_gitlink: bool,
 }
 
@@ -228,7 +229,7 @@ impl Task for SubmoduleRepoInitTask {
 }
 
 pub struct SubmoduleOpenTask {
-  pub(crate) inner: SharedReference<Repository, git2::Submodule<'static>>,
+  pub(crate) inner: Shared<Repository, git2::Submodule<'static>>,
 }
 
 unsafe impl Send for SubmoduleOpenTask {}
@@ -249,7 +250,7 @@ impl Task for SubmoduleOpenTask {
 }
 
 pub struct SubmoduleSyncTask {
-  inner: SharedReference<Repository, git2::Submodule<'static>>,
+  inner: Shared<Repository, git2::Submodule<'static>>,
 }
 
 unsafe impl Send for SubmoduleSyncTask {}
@@ -270,7 +271,7 @@ impl Task for SubmoduleSyncTask {
 }
 
 pub struct SubmoduleReloadTask {
-  inner: SharedReference<Repository, git2::Submodule<'static>>,
+  inner: Shared<Repository, git2::Submodule<'static>>,
   force: bool,
 }
 
@@ -304,7 +305,7 @@ pub struct SubmoduleUpdateOptions {
 }
 
 pub struct SubmoduleUpdateTask {
-  inner: SharedReference<Repository, git2::Submodule<'static>>,
+  inner: Shared<Repository, git2::Submodule<'static>>,
   init: bool,
   options: Option<SubmoduleUpdateOptions>,
 }
@@ -342,7 +343,7 @@ impl Task for SubmoduleUpdateTask {
 }
 
 pub struct SubmoduleCloneTask {
-  inner: SharedReference<Repository, git2::Submodule<'static>>,
+  inner: Shared<Repository, git2::Submodule<'static>>,
   options: Option<SubmoduleUpdateOptions>,
 }
 
@@ -853,7 +854,7 @@ impl Repository {
     path: String,
     use_gitlink: Option<bool>,
   ) -> crate::Result<Submodule> {
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .submodule(&url, Path::new(&path), use_gitlink.unwrap_or_default())
@@ -905,7 +906,7 @@ impl Repository {
   /// @returns The submodule.
   /// @throws If the submodule not found.
   pub fn get_submodule(&self, this: Reference<Repository>, env: Env, name: String) -> crate::Result<Submodule> {
-    let inner = this.share_with(env, |repo| {
+    let inner = this.share(env, |repo| {
       repo
         .inner
         .find_submodule(&name)

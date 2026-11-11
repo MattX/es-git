@@ -1,4 +1,5 @@
 use crate::repository::Repository;
+use crate::shared::{ShareExt, Shared};
 use crate::signature::{Signature, SignaturePayload};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
@@ -82,7 +83,7 @@ impl From<StashApplyOptions> for git2::StashApplyOptions<'_> {
 }
 
 pub(crate) enum StashEntryInner {
-  StashList(SharedReference<StashList, (usize, git2::Oid, Option<String>)>),
+  StashList(Shared<StashList, (usize, git2::Oid, Option<String>)>),
   Owned((usize, git2::Oid, Option<String>)),
 }
 
@@ -228,7 +229,7 @@ impl StashEntry {
 /// }
 /// ```
 pub struct StashList {
-  pub(crate) inner: SharedReference<Repository, Vec<(usize, git2::Oid, Option<String>)>>,
+  pub(crate) inner: Shared<Repository, Vec<(usize, git2::Oid, Option<String>)>>,
 }
 
 #[napi]
@@ -267,7 +268,7 @@ impl StashList {
     }
 
     this
-      .share_with(env, move |list| {
+      .share(env, move |list| {
         list
           .inner
           .get(idx)
@@ -355,14 +356,14 @@ impl StashList {
   /// ```
   pub fn iter(&self, this: Reference<StashList>, env: Env) -> crate::Result<StashListIter> {
     let entries = self.inner.deref().clone();
-    let inner = this.share_with(env, move |_| Ok(entries))?;
+    let inner = this.share(env, move |_| Ok(entries))?;
     Ok(StashListIter { inner, index: 0 })
   }
 }
 
 #[napi(iterator)]
 pub struct StashListIter {
-  pub(crate) inner: SharedReference<StashList, Vec<(usize, git2::Oid, Option<String>)>>,
+  pub(crate) inner: Shared<StashList, Vec<(usize, git2::Oid, Option<String>)>>,
   index: usize,
 }
 
@@ -608,7 +609,7 @@ impl Repository {
   /// }
   /// ```
   pub fn stash_list(&self, this: Reference<Repository>, env: Env) -> crate::Result<StashList> {
-    let inner = this.share_with(env, move |repo| {
+    let inner = this.share(env, move |repo| {
       let mut entries = Vec::new();
       repo
         .inner
